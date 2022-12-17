@@ -1,2 +1,5 @@
 # MSSP_615_MBTA
-MA 615 final project
+This project is address with MSSP MA 615 final project.
+
+Name: Huifei Xu
+Instructor: Professor Haviland Wright
