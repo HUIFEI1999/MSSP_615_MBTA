@@ -1,0 +1,173 @@
+---
+title: "report"
+author: "Huifei Xu 63205581"
+date: "2022-12-17"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE,message = FALSE)
+```
+
+```{r}
+# environment
+
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library("tools")
+library("maps")
+library("rnaturalearth")
+library("rnaturalearthdata")
+```
+
+```{r,show_col_types = FALSE}
+# import dataset
+stop <- read_csv("stops.txt")
+r1 <- read_csv("HRTravelTimesQ4_21.csv")
+l1 <- read_csv("LRTravelTimesQ4_21.csv")
+r2 <- read_csv("2022-Q1_HRTravelTimes.csv")
+l2 <- read_csv("2022-Q1_LRTravelTimes.csv")
+```
+
+```{r}
+# table for number of station
+## unique stop id
+station <- rbind(select(r1,c(3,4)),select(l1,c(3,4))) %>% unique()
+
+n_station <- station %>% count(route_id)
+```
+
+```{r}
+# Histogram
+mycolor = c("blue","chartreuse","chartreuse1","chartreuse2","chartreuse3","cyan","orange","red")
+
+his_station <- barplot(height=n_station$n, names=n_station$route_id, col=mycolor,
+        xlab="Main Subway Lines", 
+        ylab="Counts", 
+        main="Count of stations per MBTA line", 
+        ylim=c(0,55) )
+```
+
+
+```{r}
+# produce geo dataframe
+
+# add coordinates
+nacol <- c("stop_id","stop_lat","stop_lon","platform_name")
+mstop <-select(stop,nacol)
+
+b <- as.character(station$to_stop_id)
+ans = stop[which(mstop$stop_id ==b[1]),]
+
+for (i in 1:length(station$to_stop_id)){
+  mt <- stop[which(mstop$stop_id ==b[i]),]
+  ans = rbind(mt,ans)
+}
+
+mt <- select(ans[1:length(station$to_stop_id),],nacol)
+mt$stop_id <- as.numeric(mt$stop_id)
+mt <- mt[order(mt$stop_id),]
+mt$line <- as.factor(station$route_id)
+
+```
+
+
+```{r}
+# map fig
+theme_set(theme_bw())
+world <- ne_countries(scale = "medium", returnclass = "sf")
+counties <- st_as_sf(map("county", plot = FALSE, fill = TRUE))
+counties <- subset(counties, grepl("massachusetts", counties$ID))
+counties$area <- as.numeric(st_area(counties))
+```
+
+
+```{r}
+#MAP
+mymap <- ggplot(data = world) +
+  geom_sf(fill = "cornsilk") +
+  geom_sf(data = counties, fill = NA, color = gray(.5)) +
+  geom_point(data = mt, aes(x = stop_lon, y = stop_lat,color = line), size = 0.65) +
+  annotate(geom = "text", x = -71.1, y = 42.16, label = "Norfalk", color = "grey22", size = 4.5) +
+  annotate(geom = "text", x = -71.15, y = 42.45, label = "Middlesex", color = "grey22", size = 4.5) +
+  annotate(geom = "text", x = -70.98, y = 42.47, label = "Essex", color = "grey22", size = 4.5) +
+  annotate(geom = "text", x = -70.88, y = 42.14, label = "Plymouth", color = "grey22", size = 4.5) +
+  coord_sf(xlim = c(-71.3, -70.8), ylim = c(42.1, 42.5), expand = FALSE) +
+  scale_color_manual(values=mycolor)
+```
+
+```{r,eval=FALSE}
+# map line version
+ggplot(data = world) +
+    geom_sf(fill = "cornsilk") +
+  
+      geom_sf(data = counties, fill = NA, color = gray(.5)) +
+  
+    geom_point(data = mt[mt$line == "Blue",], aes(x = stop_lon, y = stop_lat), size = 0.65, 
+         color = "blue") +
+    geom_line(data = mt[mt$line == "Blue",],aes(x = stop_lon,y = stop_lat),color = "blue",alpha = 0.6) +
+  
+    geom_point(data = mt[mt$line == "Orange",], aes(x = stop_lon, y = stop_lat), size = 0.65, 
+         color = "orange")+
+      # geom_line(data = mt[mt$line == "Orange",],aes(x = stop_lon,y = stop_lat),color = "orange") +
+
+  
+      geom_point(data = mt[mt$line == "Red",], aes(x = stop_lon, y = stop_lat), size = 0.65, 
+         color = "red") +
+       # geom_line(data = mt[mt$line == "Red",],aes(x = stop_lon,y = stop_lat),color = "red") +
+  
+       annotate(geom = "text", x = -71.1, y = 42.16, label = "Norfalk", 
+         color = "grey22", size = 4.5) +
+    
+         annotate(geom = "text", x = -71.15, y = 42.45, label = "Middlesex", 
+         color = "grey22", size = 4.5) +
+  
+           annotate(geom = "text", x = -70.98, y = 42.47, label = "Essex", 
+         color = "grey22", size = 4.5) +
+  
+             annotate(geom = "text", x = -70.88, y = 42.14, label = "Plymouth", 
+         color = "grey22", size = 4.5) +
+
+  
+    coord_sf(xlim = c(-71.3, -70.8), ylim = c(42.1, 42.5), expand = FALSE)
+```
+
+# Intro 
+
+this is a eda report for MBTA subway.
+
+# histogram for number of subway stations per line
+```{r}
+his_station
+```
+
+# map view for all station at great boston area
+
+```{r}
+mymap
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
